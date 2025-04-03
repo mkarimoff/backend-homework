@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import axios from "axios";
 import { baseApi } from "./utils/api";
+import { ModalCon, NewProductCon, ProductsCon, ProductsWrap } from "./style";
+import { useNavigate } from "react-router-dom";
 
-interface product {
+interface Product {
   _id: string;
   name: string;
   price: number;
@@ -13,133 +15,154 @@ interface product {
   type: string;
 }
 
-function App() {
-  const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+const App = () => {
 
-  const [products, setProducts] = useState<product[]>([]);
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const token = localStorage.getItem("authToken");
+
+      if (token) {
+        const decoded = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
+        const expirationTime = decoded.exp * 5000; // Convert to milliseconds
+
+        if (Date.now() >= expirationTime) {
+          console.log("Token expired, logging out...");
+          localStorage.removeItem("authToken"); // Remove expired token
+          navigate("/login"); // Redirect to login
+        }
+      }
+    };
+
+    checkTokenExpiration();
+    const interval = setInterval(checkTokenExpiration, 5000); // Check every 5s
+
+    return () => clearInterval(interval);
+  }, [navigate]);
+
+  const [open, setOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
   const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState<number | "">("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  const fetchProduct = async () => {
+  const fetchProducts = async () => {
     try {
-      const response = await axios.get(
-      baseApi + "/products/getProducts"
-      );
+      const response = await axios.get(`${baseApi}/products/getProducts`);
       setProducts(response.data.products);
     } catch (error) {
-      console.error("failed to fetch products list", error);
+      console.error("Failed to fetch products", error);
     }
   };
 
-  const AddProduct = async () => {
+  const addProduct = async () => {
+    setError(null); // Reset error on new submission
+
+    if (!name || !price || !description || !type) {
+      setError("All fields are required.");
+      return;
+    }
+    
+    if (typeof price !== "number" || price <= 0) {
+      setError("Price must be a valid number greater than zero.");
+      return;
+    }
+
     try {
-      await axios.post("http://localhost:5050/dev-api/products/add", {
-        name,
-        price,
-        description,
-        type,
-      });
-      fetchProduct();
+      await axios.post(`${baseApi}/products/add`, { name, price, description, type });
+
+      fetchProducts();
       setName("");
-      setPrice(0);
+      setPrice("");
       setDescription("");
       setType("");
+      setOpen(false); // Close modal after success
     } catch (error) {
-      console.error("failed to add products", error);
+      console.error("Failed to add product", error);
+      setError("Failed to add product. Please try again.");
     }
   };
 
-  const DeeletProduct = async (id: string) => {
+  const deleteProduct = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:5050/dev-api/products/delete/${id}`);
-      fetchProduct();
+      await axios.delete(`${baseApi}/products/delete/${id}`);
+      fetchProducts();
     } catch (error) {
-      console.error("failed to delete products", error);
+      console.error("Failed to delete product", error);
     }
   };
-  useEffect(() => {
-    fetchProduct();
-  }, []);
+
   return (
     <>
       <div className="main-con">
-        <div className="title-button">
+        <NewProductCon>
           <h3>Products List</h3>
-          <button onClick={handleOpen}>Add new product</button>
-          <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
+          <button onClick={() => setOpen(true)}>Add new product</button>
+          <Modal open={open} onClose={() => setOpen(false)}>
             <Box sx={style}>
-              <Typography id="modal-modal-title" variant="h6" component="h2">
+              <Typography id="modal-modal-title" variant="h6">
                 Add New Product
               </Typography>
               <Typography id="modal-modal-description" sx={{ mt: 2 }}>
-                <form
-                  action=""
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                  }}
-                >
+                <ModalCon>
                   <input
                     type="text"
-                    placeholder="name"
+                    placeholder="Product Name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
                   <input
-                    type="text"
-                    placeholder="price"
+                    type="number"
+                    placeholder="Price"
                     value={price}
-                    onChange={(e) => setPrice(parseFloat(e.target.value))}
+                    onChange={(e) => setPrice(e.target.value ? parseFloat(e.target.value) : "")}
                   />
                   <input
                     type="text"
-                    placeholder="description"
+                    placeholder="Description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
-                  <select name="category" id="category" onChange={(e) => setType(e.target.value)} >
+                  <select value={type} onChange={(e) => setType(e.target.value)}>
                     <option value="">Select product type</option>
                     <option value="fruits">Fruits</option>
                     <option value="vegan">Vegan</option>
                     <option value="drinks">Drinks</option>
                     <option value="foods">Food</option>
                   </select>
-                  <button onClick={AddProduct}>Submit</button>
-                </form>
+                  {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
+                  <button onClick={addProduct}>Submit</button>
+                </ModalCon>
               </Typography>
             </Box>
           </Modal>
-        </div>
-        <ul>
-          {products.map((products) => (
-            <li
-              key={products._id}
-              style={{ display: "flex", justifyContent: "space-between" ,gap:'30px',alignItems:'center'}}
-            >
-              <h3>{products.name}</h3>
-              <p>{products.price}</p>
-              <p>{products.description}</p>
-              <button onClick={() => DeeletProduct(products._id)} style={{backgroundColor:'red',color:'white',width:'80px',cursor:"pointer"}}>
-                delete
+        </NewProductCon>
+        <ProductsCon>
+          {products.map((product) => (
+            <ProductsWrap key={product._id} >
+              <h3>{product.name}</h3>
+              <div className="price-desc">
+              <p>{product.price}$</p>
+              <h5>{product.description}</h5>
+              </div>
+              <button onClick={() => deleteProduct(product._id)}>
+                Delete
               </button>
-            </li>
+            </ProductsWrap>
           ))}
-        </ul>
+        </ProductsCon>
       </div>
     </>
   );
-}
+};
 
 export default App;
 
@@ -148,9 +171,8 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 600,
+  width: 410,
   bgcolor: "background.paper",
-  border: "2px solid #000",
   boxShadow: 24,
   p: 4,
 };

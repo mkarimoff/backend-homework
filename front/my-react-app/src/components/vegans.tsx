@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { baseApi } from "../utils/api";
-
+import { ProductsCon, ProductsWrap } from "../style";
 
 interface product {
   _id: string;
@@ -11,7 +11,6 @@ interface product {
   type: string;
 }
 const Vegans = () => {
-
   const [products, setProducts] = useState<product[]>([]);
   const fetchProduct = async () => {
     try {
@@ -33,37 +32,21 @@ const Vegans = () => {
     fetchProduct();
   }, []);
 
-  const filteredFruits = products.filter((item) => item.type === "vegan");
+  const filteredProducts = products.filter((item) => item.type === "vegan");
   return (
     <div>
-      <ul style={{marginTop: "100px",}}>
-        {filteredFruits.map((value) => (
-          <li
-            key={value._id}
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "30px",
-              alignItems: "center",
-            }}
-          >
+      <ProductsCon>
+        {filteredProducts.map((value) => (
+          <ProductsWrap key={value._id}>
             <h3>{value.name}</h3>
-            <p>{value.price}</p>
-            <p>{value.description}</p>
-            <button
-              onClick={() => DeeletProduct(value._id)}
-              style={{
-                backgroundColor: "red",
-                color: "white",
-                width: "80px",
-                cursor: "pointer",
-              }}
-            >
-              delete
-            </button>
-          </li>
+            <div className="price-desc">
+              <p>{value.price}</p>
+              <h5>{value.description}</h5>
+            </div>
+            <button onClick={() => DeeletProduct(value._id)}>Delete</button>
+          </ProductsWrap>
         ))}
-      </ul>
+      </ProductsCon>
     </div>
   );
 };

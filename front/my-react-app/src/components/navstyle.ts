@@ -10,16 +10,16 @@ export const NavCon = styled.div`
 
   p{
     color: black;
-    padding: 7px 10px;
+    padding: 4px 10px;
     border-radius: 15px;
 
     &:hover{
-        background-color: black;
+        background-color: #928E8B;
         color: white;
     }
   }
   .active-link p{
-    background-color: black;
+    background-color: #928E8B;
     color: white;
   }
 `;

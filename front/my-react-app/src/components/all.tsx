@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { baseApi } from "../utils/api";
+import { ProductsCon, ProductsWrap } from "../style";
 
 interface product {
   _id: string;
@@ -11,6 +12,7 @@ interface product {
 }
 
 const All = () => {
+
   const [products, setProducts] = useState<product[]>([]);
 
   const fetchProduct = async () => {
@@ -35,34 +37,22 @@ const All = () => {
   }, []);
   return (
     <div>
-      <ul>
+      <ProductsCon>
         {products.map((products) => (
-          <li
-            key={products._id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "30px",
-              alignItems: "center",
-            }}
-          >
+          <ProductsWrap
+            key={products._id}>
             <h3>{products.name}</h3>
+            <div className="price-desc">
             <p>{products.price}</p>
             <p>{products.description}</p>
+            </div>
             <button
-              onClick={() => DeeletProduct(products._id)}
-              style={{
-                backgroundColor: "red",
-                color: "white",
-                width: "80px",
-                cursor: "pointer",
-              }}
-            >
+              onClick={() => DeeletProduct(products._id)} >
               delete
             </button>
-          </li>
+          </ProductsWrap>
         ))}
-      </ul>
+      </ProductsCon>
     </div>
   );
 };

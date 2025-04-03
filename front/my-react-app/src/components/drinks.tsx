@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { baseApi } from "../utils/api";
+import { ProductsCon, ProductsWrap } from "../style";
 
 
 interface product {
@@ -35,34 +36,18 @@ const Drinks = () => {
   const filteredFruits = products.filter((item) => item.type === "drinks");
   return (
     <div>
-      <ul style={{ marginTop: "100px" }}>
+      <ProductsCon>
         {filteredFruits.map((value) => (
-          <li
-            key={value._id}
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "30px",
-              alignItems: "center",
-            }}
-          >
+          <ProductsWrap key={value._id}>
             <h3>{value.name}</h3>
-            <p>{value.price}</p>
-            <p>{value.description}</p>
-            <button
-              onClick={() => DeeletProduct(value._id)}
-              style={{
-                backgroundColor: "red",
-                color: "white",
-                width: "80px",
-                cursor: "pointer",
-              }}
-            >
-              delete
-            </button>
-          </li>
+            <div className="price-desc">
+              <p>{value.price}</p>
+              <h5>{value.description}</h5>
+            </div>
+            <button onClick={() => DeeletProduct(value._id)}>Delete</button>
+          </ProductsWrap>
         ))}
-      </ul>
+      </ProductsCon>
     </div>
   );
 };
