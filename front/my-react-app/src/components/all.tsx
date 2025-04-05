@@ -9,6 +9,7 @@ interface product {
   price: number;
   description: string;
   type: string;
+  image: string;
 }
 
 const All = () => {
@@ -41,6 +42,7 @@ const All = () => {
         {products.map((products) => (
           <ProductsWrap
             key={products._id}>
+            <img src={products.image} alt="image" />
             <h3>{products.name}</h3>
             <div className="price-desc">
             <p>{products.price}</p>

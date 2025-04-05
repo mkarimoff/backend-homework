@@ -1,4 +1,4 @@
-import  { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
@@ -13,12 +13,11 @@ interface Product {
   price: number;
   description: string;
   type: string;
+  image: string;
 }
 
 const App = () => {
-
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const checkTokenExpiration = () => {
@@ -48,6 +47,7 @@ const App = () => {
   const [price, setPrice] = useState<number | "">("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,24 +66,36 @@ const App = () => {
   const addProduct = async () => {
     setError(null); // Reset error on new submission
 
-    if (!name || !price || !description || !type) {
-      setError("All fields are required.");
+    if (!name || !price || !description || !type || !image) {
+      setError("All fields are required, including an image.");
       return;
     }
-    
+
     if (typeof price !== "number" || price <= 0) {
       setError("Price must be a valid number greater than zero.");
       return;
     }
 
     try {
-      await axios.post(`${baseApi}/products/add`, { name, price, description, type });
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("price", price.toString());
+      formData.append("description", description);
+      formData.append("type", type);
+      formData.append("image", image); // ✅ Send image
+
+      await axios.post(`${baseApi}/products/add`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data", // ✅ Important for file uploads
+        },
+      });
 
       fetchProducts();
       setName("");
       setPrice("");
       setDescription("");
       setType("");
+      setImage(null);
       setOpen(false); // Close modal after success
     } catch (error) {
       console.error("Failed to add product", error);
@@ -114,6 +126,13 @@ const App = () => {
               <Typography id="modal-modal-description" sx={{ mt: 2 }}>
                 <ModalCon>
                   <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setImage(e.target.files ? e.target.files[0] : null)
+                    }
+                  />
+                  <input
                     type="text"
                     placeholder="Product Name"
                     value={name}
@@ -123,7 +142,9 @@ const App = () => {
                     type="number"
                     placeholder="Price"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value ? parseFloat(e.target.value) : "")}
+                    onChange={(e) =>
+                      setPrice(e.target.value ? parseFloat(e.target.value) : "")
+                    }
                   />
                   <input
                     type="text"
@@ -131,14 +152,19 @@ const App = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
-                  <select value={type} onChange={(e) => setType(e.target.value)}>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                  >
                     <option value="">Select product type</option>
                     <option value="fruits">Fruits</option>
                     <option value="vegan">Vegan</option>
                     <option value="drinks">Drinks</option>
                     <option value="foods">Food</option>
                   </select>
-                  {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
+                  {error && (
+                    <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>
+                  )}
                   <button onClick={addProduct}>Submit</button>
                 </ModalCon>
               </Typography>
@@ -147,15 +173,14 @@ const App = () => {
         </NewProductCon>
         <ProductsCon>
           {products.map((product) => (
-            <ProductsWrap key={product._id} >
+            <ProductsWrap key={product._id}>
+             <img src={`${baseApi}/${product.image}`} />
               <h3>{product.name}</h3>
               <div className="price-desc">
-              <p>{product.price}$</p>
-              <h5>{product.description}</h5>
+                <p>{product.price}$</p>
+                <h5>{product.description}</h5>
               </div>
-              <button onClick={() => deleteProduct(product._id)}>
-                Delete
-              </button>
+              <button onClick={() => deleteProduct(product._id)}>Delete</button>
             </ProductsWrap>
           ))}
         </ProductsCon>
